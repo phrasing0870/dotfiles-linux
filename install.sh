@@ -17,6 +17,14 @@ while read -r app; do
     flatpak install -y flathub "$app"
 done < packages/flatpak.txt
 
+echo "Installing yt-dlp..."
+mkdir -p "$HOME/.local/bin"
+
+curl -L https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp \
+  -o "$HOME/.local/bin/yt-dlp"
+
+chmod +x "$HOME/.local/bin/yt-dlp"
+
 echo "Linking dotfiles..."
 stow -R -t "$HOME" bash git
 

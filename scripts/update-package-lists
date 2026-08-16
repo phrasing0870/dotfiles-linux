@@ -1,0 +1,10 @@
+#!/usr/bin/env bash
+
+set -e
+
+ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+
+flatpak list --app --columns=application | sort > "$ROOT/packages/flatpak.txt"
+
+echo "Updated Flatpak list."
+echo "APT list is curated manually."
