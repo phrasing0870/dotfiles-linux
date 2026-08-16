@@ -1,0 +1,28 @@
+{
+  "bookmark_bar": {
+    "show_on_all_tabs": true
+  },
+  "brave": {
+    "ai_chat": {
+      "autocomplete_provider_enabled": false,
+      "context_menu_enabled": false,
+      "show_toolbar_button": false,
+      "storage_enabled": false,
+      "tab_organization_enabled": false
+    },
+    "enable_window_closing_confirm": true,
+    "new_tab_page": {
+      "show_brave_news": false
+    },
+    "rewards": {
+      "show_brave_rewards_button_in_location_bar": false
+    },
+    "shields": {
+      "advanced_view_enabled": true
+    },
+    "show_side_panel_button": false,
+    "wallet": {
+      "show_wallet_icon_on_toolbar": false
+    }
+  }
+}

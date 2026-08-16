@@ -64,6 +64,31 @@ while IFS= read -r app; do
     run flatpak install -y flathub "$app"
 done < packages/flatpak.txt
 
+# --- Brave preferences ---
+
+BRAVE_PREFS="$HOME/.config/BraveSoftware/Brave-Browser/Default/Preferences"
+BRAVE_DOTFILES_PREFS="$DOTFILES_DIR/brave/preferences.json"
+
+if [[ -f "$BRAVE_DOTFILES_PREFS" ]]; then
+    echo "==> Restoring Brave preferences"
+
+    if $DRY_RUN; then
+        echo "DRY-RUN: would merge $BRAVE_DOTFILES_PREFS into $BRAVE_PREFS"
+    elif [[ -f "$BRAVE_PREFS" ]]; then
+        tmp="$(mktemp)"
+
+        jq -s '.[0] * .[1]' \
+            "$BRAVE_PREFS" \
+            "$BRAVE_DOTFILES_PREFS" \
+            > "$tmp"
+
+        mv "$tmp" "$BRAVE_PREFS"
+    else
+        echo "Warning: Brave preferences not found."
+        echo "         Open Brave once, close it, then rerun the installer."
+    fi
+fi
+
 # --- VSCodium extensions ---
 
 if [[ -f packages/vscodium-extensions.txt ]]; then
