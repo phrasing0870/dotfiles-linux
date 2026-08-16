@@ -3,7 +3,6 @@
 set -e
 
 DOTFILES_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-
 cd "$DOTFILES_DIR"
 
 echo "Updating APT..."
@@ -21,5 +20,14 @@ done < packages/flatpak.txt
 echo "Linking dotfiles..."
 stow -R -t "$HOME" bash git
 
-echo
+echo "Configuring firewall..."
+sudo ufw allow 53317/tcp
+sudo ufw allow 53317/udp
+
+echo "Restoring Cinnamon settings..."
+dconf load /org/cinnamon/ < cinnamon.dconf
+
+echo "Restoring Nemo settings..."
+dconf load /org/nemo/ < nemo.dconf
+
 echo "Setup complete."
