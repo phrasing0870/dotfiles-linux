@@ -1,4 +1,35 @@
+# macOS
 .DS_Store
+
+# Editor temp files
 *.swp
 *.swo
 *~
+*.tmp
+
+# Logs
+*.log
+
+# Local/private overrides
+local/
+.env
+.env.*
+!.env.example
+
+# Backups
+*.bak
+*.backup
+*.backup-*
+
+# Secrets / credentials
+*.key
+*.pem
+*.p12
+*.pfx
+
+# Python noise
+__pycache__/
+*.pyc
+
+# VS Code / VSCodium workspace state
+.vscode/
