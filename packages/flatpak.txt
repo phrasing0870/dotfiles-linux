@@ -1,8 +1,13 @@
 com.discordapp.Discord
 com.github.tchx84.Flatseal
+com.heroicgameslauncher.hgl
+com.obsproject.Studio
 com.spotify.Client
+com.usebottles.bottles
 com.vscodium.codium
 io.github.flattool.Warehouse
 io.missioncenter.MissionCenter
+it.mijorus.gearlever
 net.davidotek.pupgui2
 org.localsend.localsend_app
+org.videolan.VLC
