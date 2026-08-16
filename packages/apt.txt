@@ -19,3 +19,4 @@ shellcheck
 stow
 tree
 wget
+gh
