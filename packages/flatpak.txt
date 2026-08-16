@@ -1,3 +1,4 @@
 com.discordapp.Discord
 com.spotify.Client
 com.vscodium.codium
+org.localsend.localsend_app
