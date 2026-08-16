@@ -15,3 +15,16 @@ flatpak run com.vscodium.codium --list-extensions \
 echo
 echo "Lists updated."
 echo "APT list remains curated manually."
+
+echo
+echo "==> Changes"
+
+if git -C "$ROOT" diff --quiet -- \
+    packages/flatpak.txt \
+    packages/vscodium-extensions.txt; then
+    echo "No package list changes."
+else
+    git -C "$ROOT" --no-pager diff -- \
+        packages/flatpak.txt \
+        packages/vscodium-extensions.txt
+fi
