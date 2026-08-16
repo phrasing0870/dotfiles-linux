@@ -1,0 +1,17 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+
+echo "==> Updating Flatpak list"
+flatpak list --app --columns=application | sort \
+    > "$ROOT/packages/flatpak.txt"
+
+echo "==> Updating VSCodium extensions"
+flatpak run com.vscodium.codium --list-extensions \
+    2> >(grep -v '^com\.vscodium\.codium-wrapper:' >&2) |
+    sort > "$ROOT/packages/vscodium-extensions.txt"
+
+echo
+echo "Lists updated."
+echo "APT list remains curated manually."
