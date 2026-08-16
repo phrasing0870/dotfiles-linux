@@ -3,6 +3,7 @@ bat
 btop
 build-essential
 curl
+dconf-cli
 fd-find
 ffmpeg
 flatpak
@@ -22,5 +23,6 @@ rsync
 shellcheck
 stow
 tree
+ufw
 wget
 xclip
