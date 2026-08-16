@@ -4,8 +4,11 @@ btop
 build-essential
 curl
 fd-find
+ffmpeg
 fzf
+gh
 git
+gnome-screenshot
 gufw
 htop
 inxi
@@ -19,6 +22,4 @@ shellcheck
 stow
 tree
 wget
-gh
 xclip
-ffmpeg
