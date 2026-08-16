@@ -1,6 +1,12 @@
 # --- PATH ---
 export PATH="$HOME/.local/bin:$PATH"
 
+# Stop here for non-interactive shells
+case $- in
+    *i*) ;;
+      *) return;;
+esac
+
 # don't put duplicate lines or lines starting with space in the history
 HISTCONTROL=ignoreboth
 
