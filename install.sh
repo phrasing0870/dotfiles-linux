@@ -21,6 +21,22 @@ run() {
 DOTFILES_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 cd "$DOTFILES_DIR"
 
+# --- Required files ---
+
+required_files=(
+    "packages/apt.txt"
+    "packages/flatpak.txt"
+    "packages/vscodium-extensions.txt"
+    "brave/preferences.json"
+)
+
+for file in "${required_files[@]}"; do
+    if [[ ! -f "$file" ]]; then
+        echo "Error: Required file is missing: $file"
+        exit 1
+    fi
+done
+
 # --- Verify distro ---
 
 if [[ ! -f /etc/os-release ]]; then
