@@ -1,0 +1,12 @@
+[user]
+    name = Ethan
+    email = 145928757+phrasing0870@users.noreply.github.com
+
+[init]
+    defaultBranch = main
+
+[core]
+    editor = nano
+
+[pull]
+    rebase = false

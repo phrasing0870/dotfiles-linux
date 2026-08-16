@@ -1,0 +1,3 @@
+com.discordapp.Discord
+com.spotify.Client
+com.vscodium.codium
