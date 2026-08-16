@@ -1,19 +1,22 @@
 # Linux Dotfiles
 
-Personal Linux Mint configuration and setup files.
+Personal Linux Mint configuration and fresh-install setup files.
 
 ## Includes
 
 - Bash configuration
 - Bash aliases
 - Git configuration
-- APT package list
-- Flatpak package list
-- Setup scripts
+- Curated APT package list
+- Flatpak application list
+- VSCodium settings and extensions
+- Brave preferences
 - Cinnamon settings
 - Nemo settings
 - LocalSend firewall configuration
 - yt-dlp setup
+- Package list update script
+- Fresh-install bootstrap script
 
 ## Install
 
@@ -38,10 +41,13 @@ Run the installer:
 
 ## What the Installer Does
 
+- Verifies the system is Linux Mint or Ubuntu-based
 - Updates APT
 - Installs curated APT packages
 - Configures Flathub
 - Installs Flatpak applications
+- Restores selected Brave preferences
+- Installs VSCodium extensions
 - Installs the latest yt-dlp
 - Backs up existing Bash and Git configuration files
 - Links dotfiles with GNU Stow
@@ -61,6 +67,7 @@ gh auth setup-git
 Then:
 
 - Log into applications
+- Open Brave once before restoring Brave settings if its profile does not exist yet
 - Reboot or log out and back in if Cinnamon settings need a refresh
 
 ## Structure
@@ -70,13 +77,24 @@ dotfiles-linux/
 ├── bash/
 │   ├── .bash_aliases
 │   └── .bashrc
+├── brave/
+│   └── preferences.json
 ├── git/
 │   └── .gitconfig
 ├── packages/
 │   ├── apt.txt
-│   └── flatpak.txt
+│   ├── flatpak.txt
+│   └── vscodium-extensions.txt
 ├── scripts/
-│   └── update-package-lists
+│   └── update-lists
+├── vscodium/
+│   └── .var/
+│       └── app/
+│           └── com.vscodium.codium/
+│               └── config/
+│                   └── VSCodium/
+│                       └── User/
+│                           └── settings.json
 ├── cinnamon.dconf
 ├── nemo.dconf
 ├── install.sh
@@ -96,13 +114,26 @@ The list is maintained manually instead of exporting every installed package bec
 
 `packages/flatpak.txt` contains the Flatpak application IDs to restore.
 
-Refresh the Flatpak list with:
+### VSCodium Extensions
+
+`packages/vscodium-extensions.txt` contains the extensions currently installed in VSCodium.
+
+Refresh the automatically managed package lists with:
 
 ```bash
-./scripts/update-package-lists
+./scripts/update-lists
 ```
 
-The APT package list is not automatically regenerated.
+The script updates:
+
+```text
+packages/flatpak.txt
+packages/vscodium-extensions.txt
+```
+
+It also shows any changes detected by Git.
+
+The APT package list remains manually curated.
 
 ## Bash Setup
 
@@ -153,6 +184,63 @@ gh auth login
 gh auth setup-git
 ```
 
+## VSCodium
+
+VSCodium is installed through Flatpak.
+
+User settings are stored in:
+
+```text
+vscodium/.var/app/com.vscodium.codium/config/VSCodium/User/settings.json
+```
+
+GNU Stow links the configuration into the VSCodium Flatpak config directory.
+
+Extensions are stored in:
+
+```text
+packages/vscodium-extensions.txt
+```
+
+The installer restores them automatically.
+
+To refresh the saved extension list:
+
+```bash
+./scripts/update-lists
+```
+
+## Brave
+
+Selected Brave preferences are stored in:
+
+```text
+brave/preferences.json
+```
+
+The repository does not store the full Brave profile.
+
+Sensitive or machine-specific data such as the following is intentionally excluded:
+
+- Cookies
+- Browsing history
+- Saved sessions
+- Account state
+- Secure Preferences
+- Cache
+- Extension state
+- Password data
+
+During setup, the installer merges the curated preferences into:
+
+```text
+~/.config/BraveSoftware/Brave-Browser/Default/Preferences
+```
+
+Brave should be closed while preferences are being restored.
+
+If the profile does not exist yet, open Brave once, close it, and rerun the installer.
+
 ## yt-dlp
 
 The installer downloads the latest official yt-dlp binary to:
@@ -190,6 +278,8 @@ nemo.dconf
 
 The installer restores these settings using `dconf`.
 
+This includes personal Cinnamon configuration such as custom keyboard shortcuts.
+
 To update the saved settings:
 
 ```bash
@@ -220,21 +310,33 @@ Before running the installer or after making major changes, use:
 
 Dry-run mode shows what the installer would do without:
 
-- Installing packages
+- Installing APT packages
 - Installing Flatpaks
+- Restoring Brave preferences
+- Installing VSCodium extensions
 - Downloading yt-dlp
 - Moving existing dotfiles
 - Running GNU Stow
-- Restoring Cinnamon or Nemo settings
+- Restoring Cinnamon settings
+- Restoring Nemo settings
 - Changing firewall rules
 
 ## Updating Package Lists
 
-Refresh the Flatpak application list:
+Refresh the Flatpak and VSCodium extension lists:
 
 ```bash
-./scripts/update-package-lists
+./scripts/update-lists
 ```
+
+If nothing has changed:
+
+```text
+==> Changes
+No package list changes.
+```
+
+If applications or extensions have changed, the script displays the Git diff.
 
 The APT package list remains manually curated.
 
@@ -250,6 +352,12 @@ Review changes:
 
 ```bash
 git diff
+```
+
+Review staged changes:
+
+```bash
+git --no-pager diff --cached
 ```
 
 Stage changes:
