@@ -1,4 +1,8 @@
 com.discordapp.Discord
+com.github.tchx84.Flatseal
 com.spotify.Client
 com.vscodium.codium
+io.github.flattool.Warehouse
+io.missioncenter.MissionCenter
+net.davidotek.pupgui2
 org.localsend.localsend_app
