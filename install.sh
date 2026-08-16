@@ -64,6 +64,25 @@ while IFS= read -r app; do
     run flatpak install -y flathub "$app"
 done < packages/flatpak.txt
 
+# --- VSCodium extensions ---
+
+if [[ -f packages/vscodium-extensions.txt ]]; then
+    echo "==> Installing VSCodium extensions"
+
+    while IFS= read -r extension; do
+        [[ -z "$extension" ]] && continue
+
+        if $DRY_RUN; then
+            run flatpak run com.vscodium.codium \
+                --install-extension "$extension"
+        else
+            flatpak run com.vscodium.codium \
+                --install-extension "$extension" ||
+                echo "Warning: Failed to install VSCodium extension: $extension"
+        fi
+    done < packages/vscodium-extensions.txt
+fi
+
 # --- yt-dlp ---
 
 echo "==> Installing yt-dlp"
@@ -94,7 +113,7 @@ done
 
 echo "==> Linking dotfiles"
 
-for package in bash git; do
+for package in bash git vscodium; do
     run stow -R -t "$HOME" "$package"
 done
 
@@ -126,8 +145,8 @@ echo "==> Configuring firewall"
 
 if command -v ufw >/dev/null 2>&1; then
     if $DRY_RUN; then
-        sudo ufw --dry-run allow 53317/tcp comment LocalSend
-        sudo ufw --dry-run allow 53317/udp comment LocalSend
+        echo "DRY-RUN: sudo ufw allow 53317/tcp comment LocalSend"
+        echo "DRY-RUN: sudo ufw allow 53317/udp comment LocalSend"
         echo "DRY-RUN: would ensure UFW is enabled"
     else
         sudo ufw allow 53317/tcp comment LocalSend
