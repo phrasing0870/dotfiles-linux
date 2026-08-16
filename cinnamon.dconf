@@ -1,0 +1,120 @@
+[/]
+alttab-switcher-delay=100
+alttab-switcher-show-current-monitor=true
+desktop-effects-minimize='traditional'
+enabled-applets=['panel1:left:0:menu@cinnamon.org:0', 'panel1:left:1:separator@cinnamon.org:1', 'panel1:left:2:grouped-window-list@cinnamon.org:2', 'panel1:right:0:systray@cinnamon.org:3', 'panel1:right:1:xapp-status@cinnamon.org:4', 'panel1:right:2:notifications@cinnamon.org:5', 'panel1:right:3:printers@cinnamon.org:6', 'panel1:right:4:removable-drives@cinnamon.org:7', 'panel1:right:5:keyboard@cinnamon.org:8', 'panel1:right:7:network@cinnamon.org:10', 'panel1:right:8:sound@cinnamon.org:11', 'panel1:right:9:power@cinnamon.org:12', 'panel1:right:10:calendar@cinnamon.org:13', 'panel1:right:11:cornerbar@cinnamon.org:14']
+hotcorner-layout=['expo:false:0', 'scale:false:0', 'scale:false:0', 'desktop:false:0']
+next-applet-id=15
+panel-edit-mode=false
+panel-zone-symbolic-icon-sizes='[{"panelId": 1, "left": 28, "center": 28, "right": 16}]'
+panels-height=['1:36']
+window-effect-speed=2
+
+[cinnamon-session]
+quit-delay-toggle=false
+quit-time-delay=60
+
+[desktop/applications/calculator]
+exec='gnome-calculator'
+
+[desktop/applications/terminal]
+exec='gnome-terminal'
+exec-arg='--'
+
+[desktop/background]
+picture-options='zoom'
+picture-uri='file:///usr/share/backgrounds/linuxmint-wallpapers/rapciu_pearl.png'
+
+[desktop/background/slideshow]
+delay=15
+image-source='xml:///usr/share/cinnamon-background-properties/linuxmint-wallpapers.xml'
+
+[desktop/input-sources]
+sources=[('xkb', 'us')]
+
+[desktop/interface]
+clock-show-date=true
+clock-show-seconds=false
+clock-use-24h=false
+cursor-blink-time=1200
+cursor-size=24
+cursor-theme='Bibata-Modern-Classic'
+gtk-enable-primary-paste=false
+gtk-theme='Mint-Y-Dark-Aqua'
+icon-theme='Mint-Y-Sand'
+
+[desktop/keybindings]
+custom-list=['custom0', '__dummy__']
+
+[desktop/keybindings/custom-keybindings/custom0]
+binding=['<Shift><Super>s']
+command="sh -c 'gnome-screenshot -a -f /tmp/screenshot.png && xclip -selection clipboard -t image/png -i /tmp/screenshot.png'"
+name='Screenshot area to clipboard'
+
+[desktop/media-handling]
+autorun-never=false
+
+[desktop/notifications]
+notification-duration=4
+remove-old=true
+
+[desktop/peripherals/keyboard]
+delay=uint32 500
+numlock-state=true
+repeat-interval=uint32 30
+
+[desktop/peripherals/mouse]
+accel-profile='default'
+double-click=400
+drag-threshold=8
+speed=-0.28151260504201681
+
+[desktop/peripherals/touchpad]
+send-events='disabled-on-external-mouse'
+speed=0.0
+
+[desktop/session]
+idle-delay=uint32 600
+
+[desktop/sound]
+event-sounds=false
+
+[desktop/wm/preferences]
+min-window-opacity=30
+
+[gestures]
+swipe-down-2='PUSH_TILE_DOWN::end'
+swipe-down-3='TOGGLE_OVERVIEW::end'
+swipe-down-4='VOLUME_DOWN::end'
+swipe-left-2='PUSH_TILE_LEFT::end'
+swipe-left-3='WORKSPACE_NEXT::end'
+swipe-left-4='WINDOW_WORKSPACE_PREVIOUS::end'
+swipe-right-2='PUSH_TILE_RIGHT::end'
+swipe-right-3='WORKSPACE_PREVIOUS::end'
+swipe-right-4='WINDOW_WORKSPACE_NEXT::end'
+swipe-up-2='PUSH_TILE_UP::end'
+swipe-up-3='TOGGLE_EXPO::end'
+swipe-up-4='VOLUME_UP::end'
+tap-3='MEDIA_PLAY_PAUSE::end'
+
+[launcher]
+check-frequency=300
+memory-limit=4096
+memory-limit-enabled=true
+
+[muffin]
+attach-modal-dialogs=true
+draggable-border-width=10
+tile-maximize=true
+workspace-cycle=true
+
+[settings-daemon/plugins/color]
+night-light-enabled=true
+night-light-schedule-mode='auto'
+night-light-temperature=uint32 2700
+
+[settings-daemon/plugins/power]
+sleep-inactive-ac-timeout=3600
+
+[theme]
+name='Mint-Y-Dark-Aqua'
