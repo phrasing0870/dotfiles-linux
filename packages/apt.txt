@@ -1,4 +1,5 @@
 7zip
+alacritty
 bat
 btop
 build-essential
@@ -7,6 +8,7 @@ dconf-cli
 fd-find
 ffmpeg
 flatpak
+fonts-jetbrains-mono
 fzf
 gh
 git

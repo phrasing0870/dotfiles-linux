@@ -4,9 +4,14 @@ set -euo pipefail
 
 DRY_RUN=false
 
-if [[ "${1:-}" == "--dry-run" ]]; then
-    DRY_RUN=true
-fi
+case "${1:-}" in
+    "") ;;
+    --dry-run) DRY_RUN=true ;;
+    *)
+        echo "Usage: $0 [--dry-run]" >&2
+        exit 2
+        ;;
+esac
 
 run() {
     if $DRY_RUN; then
@@ -24,6 +29,11 @@ cd "$DOTFILES_DIR"
 # --- Required files ---
 
 required_files=(
+    "alacritty/.config/alacritty/alacritty.toml"
+    "bash/.bashrc"
+    "bash/.bash_aliases"
+    "git/.gitconfig"
+    "vscodium/.var/app/com.vscodium.codium/config/VSCodium/User/settings.json"
     "packages/apt.txt"
     "packages/flatpak.txt"
     "packages/vscodium-extensions.txt"
@@ -32,7 +42,7 @@ required_files=(
 
 for file in "${required_files[@]}"; do
     if [[ ! -f "$file" ]]; then
-        echo "Error: Required file is missing: $file"
+        echo "Error: Required file is missing: $file" >&2
         exit 1
     fi
 done
@@ -40,14 +50,14 @@ done
 # --- Verify distro ---
 
 if [[ ! -f /etc/os-release ]]; then
-    echo "Error: Cannot identify Linux distribution."
+    echo "Error: Cannot identify Linux distribution." >&2
     exit 1
 fi
-
+# shellcheck disable=SC1091
 source /etc/os-release
 
 if [[ "${ID:-}" != "linuxmint" && "${ID_LIKE:-}" != *"ubuntu"* ]]; then
-    echo "Error: This installer is intended for Linux Mint/Ubuntu-based systems."
+    echo "Error: This installer is intended for Linux Mint/Ubuntu-based systems." >&2
     exit 1
 fi
 
@@ -85,44 +95,42 @@ done < packages/flatpak.txt
 BRAVE_PREFS="$HOME/.config/BraveSoftware/Brave-Browser/Default/Preferences"
 BRAVE_DOTFILES_PREFS="$DOTFILES_DIR/brave/preferences.json"
 
-if [[ -f "$BRAVE_DOTFILES_PREFS" ]]; then
-    echo "==> Restoring Brave preferences"
+echo "==> Restoring Brave preferences"
 
-    if $DRY_RUN; then
-        echo "DRY-RUN: would merge $BRAVE_DOTFILES_PREFS into $BRAVE_PREFS"
-    elif [[ -f "$BRAVE_PREFS" ]]; then
-        tmp="$(mktemp)"
+if $DRY_RUN; then
+    echo "DRY-RUN: would merge $BRAVE_DOTFILES_PREFS into $BRAVE_PREFS"
+elif [[ -f "$BRAVE_PREFS" ]]; then
+    tmp="$(mktemp)"
+    trap 'rm -f "$tmp"' EXIT
 
-        jq -s '.[0] * .[1]' \
-            "$BRAVE_PREFS" \
-            "$BRAVE_DOTFILES_PREFS" \
-            > "$tmp"
+    jq -s '.[0] * .[1]' \
+        "$BRAVE_PREFS" \
+        "$BRAVE_DOTFILES_PREFS" \
+        > "$tmp"
 
-        mv "$tmp" "$BRAVE_PREFS"
-    else
-        echo "Warning: Brave preferences not found."
-        echo "         Open Brave once, close it, then rerun the installer."
-    fi
+    mv "$tmp" "$BRAVE_PREFS"
+    trap - EXIT
+else
+    echo "Warning: Brave preferences not found."
+    echo "         Open Brave once, close it, then rerun the installer."
 fi
 
 # --- VSCodium extensions ---
 
-if [[ -f packages/vscodium-extensions.txt ]]; then
-    echo "==> Installing VSCodium extensions"
+echo "==> Installing VSCodium extensions"
 
-    while IFS= read -r extension; do
-        [[ -z "$extension" ]] && continue
+while IFS= read -r extension; do
+    [[ -z "$extension" ]] && continue
 
-        if $DRY_RUN; then
-            run flatpak run com.vscodium.codium \
-                --install-extension "$extension"
-        else
-            flatpak run com.vscodium.codium \
-                --install-extension "$extension" ||
-                echo "Warning: Failed to install VSCodium extension: $extension"
-        fi
-    done < packages/vscodium-extensions.txt
-fi
+    if $DRY_RUN; then
+        run flatpak run com.vscodium.codium \
+            --install-extension "$extension"
+    else
+        flatpak run com.vscodium.codium \
+            --install-extension "$extension" ||
+            echo "Warning: Failed to install VSCodium extension: $extension"
+    fi
+done < packages/vscodium-extensions.txt
 
 # --- yt-dlp ---
 
@@ -142,20 +150,26 @@ echo "==> Preparing dotfiles"
 
 BACKUP_SUFFIX="$(date +%Y%m%d-%H%M%S)"
 
-for file in .bashrc .bash_aliases .gitconfig; do
-    target="$HOME/$file"
+backup_regular_file() {
+    local target="$1"
 
-    if [[ -f "$target" && ! -L "$target" ]]; then
+    if [[ -e "$target" && ! -L "$target" ]]; then
         run mv "$target" "$target.backup-$BACKUP_SUFFIX"
     fi
-done
+}
+
+backup_regular_file "$HOME/.bashrc"
+backup_regular_file "$HOME/.bash_aliases"
+backup_regular_file "$HOME/.gitconfig"
+backup_regular_file "$HOME/.config/alacritty/alacritty.toml"
+backup_regular_file "$HOME/.var/app/com.vscodium.codium/config/VSCodium/User/settings.json"
 
 # --- GNU Stow ---
 
 echo "==> Linking dotfiles"
 
-for package in bash git vscodium; do
-    run stow -R -t "$HOME" "$package"
+for package in bash git alacritty vscodium; do
+    run stow -R --dir="$DOTFILES_DIR" --target="$HOME" "$package"
 done
 
 # --- Cinnamon / Nemo ---
