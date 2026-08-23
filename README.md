@@ -45,7 +45,72 @@ Run the installer:
 ./install.sh
 ```
 
-The installer is intended for Linux Mint and other Ubuntu-based systems. It is safe to rerun. Existing regular dotfiles that would conflict with Stow are renamed with a timestamped `.backup-*` suffix.
+The installer is intended for Linux Mint and other Ubuntu-based systems. A normal run restores everything. Existing files and settings are backed up before they are changed.
+
+### Installer Options
+
+Options can be combined:
+
+```text
+--dry-run        Preview actions without making changes
+--skip-brave     Do not restore Brave preferences
+--skip-desktop   Do not restore Cinnamon or Nemo settings
+--skip-firewall  Do not add LocalSend firewall rules
+-h, --help       Show installer help
+```
+
+Example:
+
+```bash
+./install.sh --dry-run --skip-brave --skip-firewall
+```
+
+## Backups
+
+Each run that changes existing files or settings stores them in one timestamped directory:
+
+```text
+~/.local/state/dotfiles-linux/backups/YYYYMMDD-HHMMSS/
+```
+
+The backup may contain:
+
+```text
+brave/Preferences
+desktop/cinnamon.dconf
+desktop/nemo.dconf
+home/.bashrc
+home/.bash_aliases
+home/.gitconfig
+home/.config/alacritty/alacritty.toml
+home/.var/app/com.vscodium.codium/config/VSCodium/User/settings.json
+```
+
+Only files and settings that existed before the run are included. Existing Stow-managed symlinks are left alone.
+
+### Restoring a Backup
+
+Choose the timestamped directory you want to restore:
+
+```bash
+backup_dir="$HOME/.local/state/dotfiles-linux/backups/YYYYMMDD-HHMMSS"
+```
+
+Restore saved desktop settings when those files exist:
+
+```bash
+dconf load /org/cinnamon/ < "$backup_dir/desktop/cinnamon.dconf"
+dconf load /org/nemo/ < "$backup_dir/desktop/nemo.dconf"
+```
+
+Restore Brave preferences while Brave is closed:
+
+```bash
+cp -a "$backup_dir/brave/Preferences" \
+    "$HOME/.config/BraveSoftware/Brave-Browser/Default/Preferences"
+```
+
+Dotfile backups under `home/` are the original files moved out of the way before Stow linked the repository. Restore only the files you need after removing their Stow links.
 
 ## What the Installer Does
 
@@ -53,13 +118,13 @@ The installer is intended for Linux Mint and other Ubuntu-based systems. It is s
 - Updates APT and installs the curated APT packages
 - Installs Alacritty and JetBrains Mono
 - Configures Flathub and installs Flatpak applications
-- Restores selected Brave preferences when a Brave profile exists
+- Backs up and restores selected Brave preferences when a profile exists
 - Installs VSCodium extensions
 - Installs the latest official yt-dlp binary
-- Backs up conflicting Bash, Git, Alacritty, and VSCodium files
+- Backs up conflicting dotfiles in one timestamped directory
 - Links Bash, Git, Alacritty, and VSCodium configuration with GNU Stow
-- Restores Cinnamon and Nemo settings
-- Configures LocalSend firewall rules
+- Backs up and restores Cinnamon and Nemo settings
+- Adds LocalSend UFW rules without enabling UFW
 
 ## Manual Steps After Install
 
@@ -74,6 +139,7 @@ Then:
 
 - Log into applications
 - If Brave preferences were skipped, open Brave once, close it, and rerun the installer
+- Review `sudo ufw status` and run `sudo ufw enable` if wanted
 - Log out or reboot if Cinnamon settings need a refresh
 
 Brave must be closed while its preferences are restored.
@@ -147,7 +213,7 @@ The configuration uses the `JetBrains Mono` family supplied by the `fonts-jetbra
 
 The repository stores selected Brave preferences rather than the full profile. It intentionally excludes cookies, history, sessions, account state, extension state, passwords, cache, and `Secure Preferences`.
 
-During setup, the installer merges `brave/preferences.json` into:
+During setup, the installer backs up the existing preferences and merges `brave/preferences.json` into:
 
 ```text
 ~/.config/BraveSoftware/Brave-Browser/Default/Preferences
@@ -167,7 +233,7 @@ FFmpeg is installed through APT. Download aliases are defined in `bash/.bash_ali
 
 ## Desktop Settings
 
-Cinnamon and Nemo settings are restored from `cinnamon.dconf` and `nemo.dconf`.
+Cinnamon and Nemo settings are backed up and then restored from `cinnamon.dconf` and `nemo.dconf`.
 
 Update the saved settings with:
 
@@ -180,7 +246,14 @@ Review both files before committing them for unwanted machine-specific values.
 
 ## LocalSend
 
-LocalSend is installed through Flatpak. The installer allows discovery and transfers through UFW on `53317/tcp` and `53317/udp`, and enables UFW if it is inactive.
+LocalSend is installed through Flatpak. Unless `--skip-firewall` is used, the installer adds UFW rules for `53317/tcp` and `53317/udp`.
+
+The installer does not enable UFW. Review its state after setup:
+
+```bash
+sudo ufw status
+sudo ufw enable
+```
 
 ## Validation
 
@@ -190,9 +263,11 @@ Check the installer and its Stow packages before committing:
 bash -n install.sh
 shellcheck install.sh scripts/update-lists
 ./install.sh --dry-run
+./install.sh --dry-run --skip-brave --skip-desktop --skip-firewall
 stow_test_dir="$(mktemp -d)"
 stow -n -v -R --dir="$PWD" --target="$stow_test_dir" bash git alacritty vscodium
 rmdir "$stow_test_dir"
+git diff --check
 ```
 
 Review changes:

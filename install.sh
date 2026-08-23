@@ -3,15 +3,41 @@
 set -euo pipefail
 
 DRY_RUN=false
+SKIP_BRAVE=false
+SKIP_DESKTOP=false
+SKIP_FIREWALL=false
 
-case "${1:-}" in
-    "") ;;
-    --dry-run) DRY_RUN=true ;;
-    *)
-        echo "Usage: $0 [--dry-run]" >&2
-        exit 2
-        ;;
-esac
+usage() {
+    cat <<EOF
+Usage: $0 [options]
+
+Options:
+  --dry-run        Preview actions without making changes
+  --skip-brave     Do not restore Brave preferences
+  --skip-desktop   Do not restore Cinnamon or Nemo settings
+  --skip-firewall  Do not add LocalSend firewall rules
+  -h, --help       Show this help
+EOF
+}
+
+while (( $# > 0 )); do
+    case "$1" in
+        --dry-run) DRY_RUN=true ;;
+        --skip-brave) SKIP_BRAVE=true ;;
+        --skip-desktop) SKIP_DESKTOP=true ;;
+        --skip-firewall) SKIP_FIREWALL=true ;;
+        -h|--help)
+            usage
+            exit 0
+            ;;
+        *)
+            echo "Error: Unknown option: $1" >&2
+            usage >&2
+            exit 2
+            ;;
+    esac
+    shift
+done
 
 run() {
     if $DRY_RUN; then
@@ -24,6 +50,10 @@ run() {
 }
 
 DOTFILES_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+BACKUP_SUFFIX="$(date +%Y%m%d-%H%M%S)"
+BACKUP_DIR="$HOME/.local/state/dotfiles-linux/backups/$BACKUP_SUFFIX"
+BACKUPS_PLANNED=false
+
 cd "$DOTFILES_DIR"
 
 # --- Required files ---
@@ -53,6 +83,7 @@ if [[ ! -f /etc/os-release ]]; then
     echo "Error: Cannot identify Linux distribution." >&2
     exit 1
 fi
+
 # shellcheck disable=SC1091
 source /etc/os-release
 
@@ -60,6 +91,49 @@ if [[ "${ID:-}" != "linuxmint" && "${ID_LIKE:-}" != *"ubuntu"* ]]; then
     echo "Error: This installer is intended for Linux Mint/Ubuntu-based systems." >&2
     exit 1
 fi
+
+# --- Backup helpers ---
+
+backup_move() {
+    local source="$1"
+    local relative_destination="$2"
+    local destination="$BACKUP_DIR/$relative_destination"
+
+    if [[ (! -e "$source" && ! -L "$source") || -L "$source" ]]; then
+        return
+    fi
+
+    BACKUPS_PLANNED=true
+    run mkdir -p "$(dirname "$destination")"
+    run mv -- "$source" "$destination"
+}
+
+backup_copy() {
+    local source="$1"
+    local relative_destination="$2"
+    local destination="$BACKUP_DIR/$relative_destination"
+
+    [[ -e "$source" ]] || return
+
+    BACKUPS_PLANNED=true
+    run mkdir -p "$(dirname "$destination")"
+    run cp -a -- "$source" "$destination"
+}
+
+backup_dconf() {
+    local dconf_path="$1"
+    local relative_destination="$2"
+    local destination="$BACKUP_DIR/$relative_destination"
+
+    BACKUPS_PLANNED=true
+
+    if $DRY_RUN; then
+        echo "DRY-RUN: would back up $dconf_path to $destination"
+    else
+        mkdir -p "$(dirname "$destination")"
+        dconf dump "$dconf_path" > "$destination"
+    fi
+}
 
 # --- APT ---
 
@@ -95,24 +169,32 @@ done < packages/flatpak.txt
 BRAVE_PREFS="$HOME/.config/BraveSoftware/Brave-Browser/Default/Preferences"
 BRAVE_DOTFILES_PREFS="$DOTFILES_DIR/brave/preferences.json"
 
-echo "==> Restoring Brave preferences"
-
-if $DRY_RUN; then
-    echo "DRY-RUN: would merge $BRAVE_DOTFILES_PREFS into $BRAVE_PREFS"
-elif [[ -f "$BRAVE_PREFS" ]]; then
-    tmp="$(mktemp)"
-    trap 'rm -f "$tmp"' EXIT
-
-    jq -s '.[0] * .[1]' \
-        "$BRAVE_PREFS" \
-        "$BRAVE_DOTFILES_PREFS" \
-        > "$tmp"
-
-    mv "$tmp" "$BRAVE_PREFS"
-    trap - EXIT
+if $SKIP_BRAVE; then
+    echo "==> Skipping Brave preferences"
 else
-    echo "Warning: Brave preferences not found."
-    echo "         Open Brave once, close it, then rerun the installer."
+    echo "==> Restoring Brave preferences"
+
+    if [[ -f "$BRAVE_PREFS" ]]; then
+        backup_copy "$BRAVE_PREFS" "brave/Preferences"
+
+        if $DRY_RUN; then
+            echo "DRY-RUN: would merge $BRAVE_DOTFILES_PREFS into $BRAVE_PREFS"
+        else
+            tmp="$(mktemp)"
+            trap 'rm -f "$tmp"' EXIT
+
+            jq -s '.[0] * .[1]' \
+                "$BRAVE_PREFS" \
+                "$BRAVE_DOTFILES_PREFS" \
+                > "$tmp"
+
+            mv "$tmp" "$BRAVE_PREFS"
+            trap - EXIT
+        fi
+    else
+        echo "Warning: Brave preferences not found."
+        echo "         Open Brave once, close it, then rerun the installer."
+    fi
 fi
 
 # --- VSCodium extensions ---
@@ -148,21 +230,13 @@ run chmod +x "$HOME/.local/bin/yt-dlp"
 
 echo "==> Preparing dotfiles"
 
-BACKUP_SUFFIX="$(date +%Y%m%d-%H%M%S)"
-
-backup_regular_file() {
-    local target="$1"
-
-    if [[ -e "$target" && ! -L "$target" ]]; then
-        run mv "$target" "$target.backup-$BACKUP_SUFFIX"
-    fi
-}
-
-backup_regular_file "$HOME/.bashrc"
-backup_regular_file "$HOME/.bash_aliases"
-backup_regular_file "$HOME/.gitconfig"
-backup_regular_file "$HOME/.config/alacritty/alacritty.toml"
-backup_regular_file "$HOME/.var/app/com.vscodium.codium/config/VSCodium/User/settings.json"
+backup_move "$HOME/.bashrc" "home/.bashrc"
+backup_move "$HOME/.bash_aliases" "home/.bash_aliases"
+backup_move "$HOME/.gitconfig" "home/.gitconfig"
+backup_move "$HOME/.config/alacritty/alacritty.toml" \
+    "home/.config/alacritty/alacritty.toml"
+backup_move "$HOME/.var/app/com.vscodium.codium/config/VSCodium/User/settings.json" \
+    "home/.var/app/com.vscodium.codium/config/VSCodium/User/settings.json"
 
 # --- GNU Stow ---
 
@@ -174,45 +248,48 @@ done
 
 # --- Cinnamon / Nemo ---
 
-if [[ -f cinnamon.dconf ]]; then
-    echo "==> Restoring Cinnamon settings"
+if $SKIP_DESKTOP; then
+    echo "==> Skipping Cinnamon and Nemo settings"
+else
+    if [[ -f cinnamon.dconf ]]; then
+        echo "==> Restoring Cinnamon settings"
+        backup_dconf /org/cinnamon/ "desktop/cinnamon.dconf"
 
-    if $DRY_RUN; then
-        echo "DRY-RUN: would restore cinnamon.dconf"
-    else
-        dconf load /org/cinnamon/ < cinnamon.dconf
+        if ! $DRY_RUN; then
+            dconf load /org/cinnamon/ < cinnamon.dconf
+        fi
     fi
-fi
 
-if [[ -f nemo.dconf ]]; then
-    echo "==> Restoring Nemo settings"
+    if [[ -f nemo.dconf ]]; then
+        echo "==> Restoring Nemo settings"
+        backup_dconf /org/nemo/ "desktop/nemo.dconf"
 
-    if $DRY_RUN; then
-        echo "DRY-RUN: would restore nemo.dconf"
-    else
-        dconf load /org/nemo/ < nemo.dconf
+        if ! $DRY_RUN; then
+            dconf load /org/nemo/ < nemo.dconf
+        fi
     fi
 fi
 
 # --- Firewall ---
 
-echo "==> Configuring firewall"
-
-if command -v ufw >/dev/null 2>&1; then
-    if $DRY_RUN; then
-        echo "DRY-RUN: sudo ufw allow 53317/tcp comment LocalSend"
-        echo "DRY-RUN: sudo ufw allow 53317/udp comment LocalSend"
-        echo "DRY-RUN: would ensure UFW is enabled"
-    else
-        sudo ufw allow 53317/tcp comment LocalSend
-        sudo ufw allow 53317/udp comment LocalSend
-
-        if ! sudo ufw status | grep -q '^Status: active'; then
-            sudo ufw --force enable
-        fi
-    fi
+if $SKIP_FIREWALL; then
+    echo "==> Skipping firewall configuration"
 else
-    echo "Warning: ufw is not installed, skipping firewall setup."
+    echo "==> Configuring firewall"
+
+    if command -v ufw >/dev/null 2>&1; then
+        run sudo ufw allow 53317/tcp comment LocalSend
+        run sudo ufw allow 53317/udp comment LocalSend
+
+        if $DRY_RUN; then
+            echo "DRY-RUN: would check whether UFW is active"
+        elif ! sudo ufw status | grep -q '^Status: active'; then
+            echo "Warning: UFW is inactive. Rules were added, but UFW was not enabled."
+            echo "         Enable it manually with: sudo ufw enable"
+        fi
+    else
+        echo "Warning: ufw is not installed, skipping firewall setup."
+    fi
 fi
 
 echo
@@ -221,10 +298,22 @@ if $DRY_RUN; then
     echo "Dry run complete. No changes were made."
 else
     echo "Setup complete."
+fi
+
+if $BACKUPS_PLANNED; then
+    if $DRY_RUN; then
+        echo "Planned backup location: $BACKUP_DIR"
+    else
+        echo "Backups: $BACKUP_DIR"
+    fi
+fi
+
+if ! $DRY_RUN; then
     echo
     echo "Remaining manual steps:"
     echo "  1. Run: gh auth login"
     echo "  2. Run: gh auth setup-git"
     echo "  3. Log into your applications"
-    echo "  4. Reboot or log out/in if Cinnamon settings need a refresh"
+    echo "  4. Review UFW status and enable it manually if wanted"
+    echo "  5. Reboot or log out/in if Cinnamon settings need a refresh"
 fi
