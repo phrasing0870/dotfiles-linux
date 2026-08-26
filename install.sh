@@ -3,7 +3,6 @@
 set -euo pipefail
 
 DRY_RUN=false
-SKIP_BRAVE=false
 SKIP_DESKTOP=false
 SKIP_FIREWALL=false
 
@@ -13,7 +12,6 @@ Usage: $0 [options]
 
 Options:
   --dry-run        Preview actions without making changes
-  --skip-brave     Do not restore Brave preferences
   --skip-desktop   Do not restore Cinnamon or Nemo settings
   --skip-firewall  Do not add LocalSend firewall rules
   -h, --help       Show this help
@@ -23,7 +21,6 @@ EOF
 while (( $# > 0 )); do
     case "$1" in
         --dry-run) DRY_RUN=true ;;
-        --skip-brave) SKIP_BRAVE=true ;;
         --skip-desktop) SKIP_DESKTOP=true ;;
         --skip-firewall) SKIP_FIREWALL=true ;;
         -h|--help)
@@ -67,7 +64,6 @@ required_files=(
     "packages/apt.txt"
     "packages/flatpak.txt"
     "packages/vscodium-extensions.txt"
-    "brave/preferences.json"
 )
 
 for file in "${required_files[@]}"; do
@@ -106,18 +102,6 @@ backup_move() {
     BACKUPS_PLANNED=true
     run mkdir -p "$(dirname "$destination")"
     run mv -- "$source" "$destination"
-}
-
-backup_copy() {
-    local source="$1"
-    local relative_destination="$2"
-    local destination="$BACKUP_DIR/$relative_destination"
-
-    [[ -e "$source" ]] || return
-
-    BACKUPS_PLANNED=true
-    run mkdir -p "$(dirname "$destination")"
-    run cp -a -- "$source" "$destination"
 }
 
 backup_dconf() {
@@ -163,39 +147,6 @@ while IFS= read -r app; do
     [[ -z "$app" ]] && continue
     run flatpak install -y flathub "$app"
 done < packages/flatpak.txt
-
-# --- Brave preferences ---
-
-BRAVE_PREFS="$HOME/.config/BraveSoftware/Brave-Browser/Default/Preferences"
-BRAVE_DOTFILES_PREFS="$DOTFILES_DIR/brave/preferences.json"
-
-if $SKIP_BRAVE; then
-    echo "==> Skipping Brave preferences"
-else
-    echo "==> Restoring Brave preferences"
-
-    if [[ -f "$BRAVE_PREFS" ]]; then
-        backup_copy "$BRAVE_PREFS" "brave/Preferences"
-
-        if $DRY_RUN; then
-            echo "DRY-RUN: would merge $BRAVE_DOTFILES_PREFS into $BRAVE_PREFS"
-        else
-            tmp="$(mktemp)"
-            trap 'rm -f "$tmp"' EXIT
-
-            jq -s '.[0] * .[1]' \
-                "$BRAVE_PREFS" \
-                "$BRAVE_DOTFILES_PREFS" \
-                > "$tmp"
-
-            mv "$tmp" "$BRAVE_PREFS"
-            trap - EXIT
-        fi
-    else
-        echo "Warning: Brave preferences not found."
-        echo "         Open Brave once, close it, then rerun the installer."
-    fi
-fi
 
 # --- VSCodium extensions ---
 

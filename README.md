@@ -10,7 +10,6 @@ Personal Linux Mint configuration and fresh-install setup files.
 - Curated APT package list
 - Flatpak application list
 - VSCodium settings and extensions
-- Selected Brave preferences
 - Cinnamon and Nemo settings
 - LocalSend firewall configuration
 - yt-dlp setup
@@ -53,7 +52,6 @@ Options can be combined:
 
 ```text
 --dry-run        Preview actions without making changes
---skip-brave     Do not restore Brave preferences
 --skip-desktop   Do not restore Cinnamon or Nemo settings
 --skip-firewall  Do not add LocalSend firewall rules
 -h, --help       Show installer help
@@ -62,7 +60,7 @@ Options can be combined:
 Example:
 
 ```bash
-./install.sh --dry-run --skip-brave --skip-firewall
+./install.sh --dry-run --skip-firewall
 ```
 
 ## Backups
@@ -76,7 +74,6 @@ Each run that changes existing files or settings stores them in one timestamped 
 The backup may contain:
 
 ```text
-brave/Preferences
 desktop/cinnamon.dconf
 desktop/nemo.dconf
 home/.bashrc
@@ -103,13 +100,6 @@ dconf load /org/cinnamon/ < "$backup_dir/desktop/cinnamon.dconf"
 dconf load /org/nemo/ < "$backup_dir/desktop/nemo.dconf"
 ```
 
-Restore Brave preferences while Brave is closed:
-
-```bash
-cp -a "$backup_dir/brave/Preferences" \
-    "$HOME/.config/BraveSoftware/Brave-Browser/Default/Preferences"
-```
-
 Dotfile backups under `home/` are the original files moved out of the way before Stow linked the repository. Restore only the files you need after removing their Stow links.
 
 ## What the Installer Does
@@ -118,7 +108,6 @@ Dotfile backups under `home/` are the original files moved out of the way before
 - Updates APT and installs the curated APT packages
 - Installs Alacritty and JetBrains Mono
 - Configures Flathub and installs Flatpak applications
-- Backs up and restores selected Brave preferences when a profile exists
 - Installs VSCodium extensions
 - Installs the latest official yt-dlp binary
 - Backs up conflicting dotfiles in one timestamped directory
@@ -138,11 +127,8 @@ gh auth setup-git
 Then:
 
 - Log into applications
-- If Brave preferences were skipped, open Brave once, close it, and rerun the installer
 - Review `sudo ufw status` and run `sudo ufw enable` if wanted
 - Log out or reboot if Cinnamon settings need a refresh
-
-Brave must be closed while its preferences are restored.
 
 ## Structure
 
@@ -153,8 +139,6 @@ dotfiles-linux/
 ├── bash/
 │   ├── .bash_aliases
 │   └── .bashrc
-├── brave/
-│   └── preferences.json
 ├── git/
 │   └── .gitconfig
 ├── packages/
@@ -209,18 +193,6 @@ The installer installs Alacritty and `fonts-jetbrains-mono`, backs up a conflict
 
 The configuration uses the `JetBrains Mono` family supplied by the `fonts-jetbrains-mono` APT package.
 
-## Brave
-
-The repository stores selected Brave preferences rather than the full profile. It intentionally excludes cookies, history, sessions, account state, extension state, passwords, cache, and `Secure Preferences`.
-
-During setup, the installer backs up the existing preferences and merges `brave/preferences.json` into:
-
-```text
-~/.config/BraveSoftware/Brave-Browser/Default/Preferences
-```
-
-If the profile does not exist, the installer skips this step with instructions. Open Brave once, close it, and rerun the installer.
-
 ## yt-dlp
 
 The installer downloads the latest official yt-dlp binary to:
@@ -263,7 +235,7 @@ Check the installer and its Stow packages before committing:
 bash -n install.sh
 shellcheck install.sh scripts/update-lists
 ./install.sh --dry-run
-./install.sh --dry-run --skip-brave --skip-desktop --skip-firewall
+./install.sh --dry-run --skip-desktop --skip-firewall
 stow_test_dir="$(mktemp -d)"
 stow -n -v -R --dir="$PWD" --target="$stow_test_dir" bash git alacritty vscodium
 rmdir "$stow_test_dir"
