@@ -83,7 +83,7 @@ fi
 # shellcheck disable=SC1091
 source /etc/os-release
 
-if [[ "${ID:-}" != "linuxmint" && "${ID_LIKE:-}" != *"ubuntu"* ]]; then
+if [[ "${ID:-}" != "linuxmint" && "${ID:-}" != "ubuntu" && "${ID_LIKE:-}" != *"ubuntu"* ]]; then
     echo "Error: This installer is intended for Linux Mint/Ubuntu-based systems." >&2
     exit 1
 fi
