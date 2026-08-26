@@ -129,7 +129,7 @@ echo "==> Installing APT packages"
 if $DRY_RUN; then
     echo "DRY-RUN: would install packages from packages/apt.txt"
 else
-    sudo xargs -r -a packages/apt.txt apt install -y
+    grep -Ev '^#|^$' packages/apt.txt | sudo xargs -r apt install -y
 fi
 
 # --- Flatpak ---
@@ -145,7 +145,13 @@ echo "==> Installing Flatpaks"
 
 while IFS= read -r app; do
     [[ -z "$app" ]] && continue
-    run flatpak install -y flathub "$app"
+
+    if $DRY_RUN; then
+        run flatpak install -y flathub "$app"
+    else
+        flatpak install -y flathub "$app" ||
+            echo "Warning: Failed to install Flatpak app: $app"
+    fi
 done < packages/flatpak.txt
 
 # --- VSCodium extensions ---
