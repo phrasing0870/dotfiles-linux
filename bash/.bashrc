@@ -114,3 +114,5 @@ if ! shopt -oq posix; then
   fi
 fi
 [ -f "$HOME/.deno/env" ] && . "$HOME/.deno/env"
+
+[ -f ~/Documents/dotfiles-linux/secrets/api_keys.env ] && export $(grep -v '^#' ~/Documents/dotfiles-linux/secrets/api_keys.env | xargs)
