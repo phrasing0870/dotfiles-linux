@@ -22,8 +22,8 @@ exec='gnome-terminal'
 exec-arg='--'
 
 [desktop/background]
-picture-options='zoom'
-picture-uri='file:///usr/share/backgrounds/linuxmint-wallpapers/rapciu_pearl.png'
+picture-options='scaled'
+picture-uri='file:///home/sarcasm/Downloads/universtock-km9n85Sm9c4-unsplash.jpg'
 
 [desktop/background/slideshow]
 delay=15
@@ -73,6 +73,9 @@ speed=-0.28151260504201681
 send-events='disabled-on-external-mouse'
 speed=0.0
 
+[desktop/screensaver]
+layout-group=0
+
 [desktop/session]
 idle-delay=uint32 600
 
@@ -110,6 +113,7 @@ workspace-cycle=true
 
 [settings-daemon/plugins/color]
 night-light-enabled=true
+night-light-last-coordinates=(40.714167000000003, -74.006388999999999)
 night-light-schedule-mode='auto'
 night-light-temperature=uint32 2700
 

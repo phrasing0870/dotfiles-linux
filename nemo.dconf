@@ -1,12 +1,18 @@
+[plugins]
+disabled-actions=@as []
+disabled-extensions=@as []
+
 [preferences]
 show-hidden-files=true
+size-prefixes='base-2'
 
 [search]
 search-reverse-sort=false
 search-sort-column='name'
 
 [window-state]
-geometry='800x550+50+50'
+geometry='800x550+1069+144'
 maximized=false
-sidebar-bookmark-breakpoint=5
+side-pane-view='places'
+sidebar-bookmark-breakpoint=6
 start-with-sidebar=true
