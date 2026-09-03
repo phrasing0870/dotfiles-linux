@@ -199,7 +199,7 @@ backup_move "$HOME/.var/app/com.vscodium.codium/config/VSCodium/User/settings.js
 
 echo "==> Linking dotfiles"
 
-for package in bash git alacritty vscodium; do
+for package in bash git alacritty vscodium local-bin; do
     run stow -R --dir="$DOTFILES_DIR" --target="$HOME" "$package"
 done
 
